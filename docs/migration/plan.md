@@ -11,7 +11,7 @@ no production cutover based only on a successful local build.**
 | 3 | Choose a target the environment can build | ✅ done — Python 3.11 + Jinja2 |
 | 4 | Minimal independent build, verified before content migration | ✅ done |
 | 5 | Move data and content in small steps | ✅ done |
-| 6 | Preserve behaviour with tests | ✅ done — 88 Python + 74 Node + 106 DOM checks |
+| 6 | Preserve behaviour with tests | ✅ done — 107 Python + 74 Node + 106 DOM checks |
 | 7 | Prepare staging, confirm Render's real settings, verify its build | 🔶 staged — blueprint committed, dashboard settings still to be read |
 | 8 | Cut over only with evidence | ⬜ not started — gated on step 7 |
 | 9 | Clean up old source and tooling, update docs | ⬜ not started — gated on step 8 |
@@ -112,6 +112,7 @@ no React, no `vite-plugin-singlefile`, and no secrets — the app has none.
 | `site/tests/test_jsfmt.py` | `toFixed` / `toLocaleString` vs values captured from V8 | ✅ 246 comparisons |
 | `site/tests/test_sample.py` | Deterministic sample dataset shape, ranges, naming | ✅ |
 | `site/tests/test_build.py` | Generated pages, embedded data, asset refs, ids used by JS, reproducibility | ✅ |
+| `site/tests/test_html_structure.py` | Tag balance, unique ids, label targets, sprite refs, a11y attributes (+ self-test) | ✅ |
 | `site/tests/test_config.py` | Config vs constants read out of the legacy components | ✅ |
 | `site/tests/dom/harness.mjs` | jsdom boots the built page and drives the UI end to end | ✅ 106 checks |
 
@@ -130,7 +131,10 @@ Bugs the suites caught during migration, all fixed in the new code:
 * `toFixed` rounding — V8 rounds the exact binary value half away from zero
   (`(1.005).toFixed(2) === "1.00"`), and `toLocaleString` groups the shortest
   decimal representation (`(9.999999e20).toLocaleString()`).
-* A malformed `</button>` in the table footer template.
+* A malformed `</button>` in the table footer template. `test_html_structure.py`
+  now parses every generated page for tag balance, duplicate ids, dangling
+  `label for` targets and unresolved sprite references, and includes a self-test
+  proving it fails on that exact defect.
 
 Browser review: the built site is served locally (`python3 -m http.server 4173
 --directory site/public`) and was driven through every view by the jsdom harness.

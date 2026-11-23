@@ -69,7 +69,7 @@ Deep links work with a hash: `index.html#statistics`.
 Individually:
 
 ```bash
-cd site && python3 -m unittest discover -s tests -t tests   # 88 tests
+cd site && python3 -m unittest discover -s tests -t tests   # 107 tests
 node --test "site/tests/parity/*.test.mjs"                  # 74 checks
 cd site/tests/dom && npm install && npm test                # 106 checks (needs a build first)
 ```

@@ -102,7 +102,7 @@ the same calculations:
 cd site
 pip install -r requirements.txt
 python3 build.py          # writes site/public/
-./run_tests.sh            # 88 python + 74 node + 106 DOM checks
+./run_tests.sh            # 107 python + 74 node + 106 DOM checks
 ```
 
 | Document | What it records |

@@ -61,7 +61,7 @@ Confirm it on the staging deploy before trusting it:
      command temporarily if the log does not show it);
    * `pip install -r requirements.txt` installs Jinja2 3.1.6;
    * `python3 build.py` prints `Built DataLens static site -> /opt/render/project/site/public`;
-   * `Ran 88 tests ... OK`.
+   * `Ran 107 tests ... OK`.
 3. If Python is unavailable or pinned to another version, fall back in this order:
    * set `PYTHON_VERSION` explicitly to a value Render lists for static builds;
    * or switch the staging service to a Docker static site using a
