@@ -13,10 +13,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
+# `_helpers` must be imported first: it puts `site/` on sys.path so the build
+# modules resolve no matter which directory discovery was started from.
+from _helpers import SITE_DIR, load_json
+
 import build as build_module
 import sample
 import stats
-from _helpers import SITE_DIR, load_json
 
 
 class BuildTestCase(unittest.TestCase):

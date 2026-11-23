@@ -10,8 +10,9 @@ from __future__ import annotations
 import json
 import unittest
 
-import jsfmt
 from _helpers import JSFMT_EXPECTATIONS_PATH, load_json
+
+import jsfmt
 
 
 def parse_repr(text: str) -> float:

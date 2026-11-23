@@ -11,8 +11,9 @@ from __future__ import annotations
 import math
 import unittest
 
-import stats
 from _helpers import GoldenTestCase, numbers_equal
+
+import stats
 
 
 class ColumnStatsParityTest(GoldenTestCase):

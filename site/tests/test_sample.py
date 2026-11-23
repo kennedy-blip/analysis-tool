@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import unittest
 
+from _helpers import SITE_DIR  # noqa: F401  (puts site/ on sys.path first)
+
 import sample
 import stats
 
