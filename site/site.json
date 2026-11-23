@@ -1,0 +1,194 @@
+{
+  "name": "DataLens",
+  "tagline": "Data Analysis Tool",
+  "description": "A comprehensive web-based data analysis tool designed for data analysts to compute statistics, calculate probabilities, and visualize data from Excel and CSV files.",
+  "lang": "en",
+  "output_dir": "public",
+  "views": [
+    {
+      "id": "overview",
+      "label": "Overview",
+      "title": "Overview",
+      "subtitle": "Upload and manage your datasets",
+      "icon": "layout-dashboard"
+    },
+    {
+      "id": "data",
+      "label": "Data Table",
+      "title": "Data Table",
+      "subtitle": "Browse and search through your data",
+      "icon": "table-2"
+    },
+    {
+      "id": "statistics",
+      "label": "Statistics",
+      "title": "Statistics",
+      "subtitle": "View comprehensive statistical analysis",
+      "icon": "bar-chart-3"
+    },
+    {
+      "id": "probability",
+      "label": "Probability",
+      "title": "Probability",
+      "subtitle": "Calculate probabilities and distributions",
+      "icon": "calculator"
+    },
+    {
+      "id": "visualization",
+      "label": "Visualization",
+      "title": "Visualization",
+      "subtitle": "Create charts and visualizations",
+      "icon": "pie-chart"
+    }
+  ],
+  "default_view": "overview",
+  "features": [
+    {
+      "title": "Statistical Analysis",
+      "icon": "rows-3",
+      "tone": "blue",
+      "text": "Compute mean, median, mode, variance, standard deviation, quartiles, and more."
+    },
+    {
+      "title": "Probability Tools",
+      "icon": "columns-3",
+      "tone": "purple",
+      "text": "Calculate binomial, Poisson, and normal distributions, plus correlation analysis."
+    },
+    {
+      "title": "Data Visualization",
+      "icon": "file-spreadsheet",
+      "tone": "green",
+      "text": "Create bar charts, line graphs, pie charts, scatter plots, and histograms."
+    }
+  ],
+  "upload": {
+    "accept": ".xlsx,.xls,.csv",
+    "extensions": [
+      "xlsx",
+      "xls",
+      "csv"
+    ],
+    "title": "Drag & drop your file here",
+    "hint": "or click to browse",
+    "formats": "Supports: .xlsx, .xls, .csv"
+  },
+  "sample_dataset": {
+    "source": "data/sample_sales_data.json",
+    "stats_source": "data/sample_stats.json",
+    "display_name": "sample_sales_data.csv",
+    "rows": 200,
+    "seed": 20260101
+  },
+  "table": {
+    "rows_per_page": 15,
+    "page_window": 5
+  },
+  "charts": {
+    "max_categories": 50,
+    "max_pie_slices": 12,
+    "max_scatter_points": 500,
+    "max_histogram_bins": 20,
+    "palette": [
+      "#6366f1",
+      "#8b5cf6",
+      "#a855f7",
+      "#d946ef",
+      "#ec4899",
+      "#f43f5e",
+      "#ef4444",
+      "#f97316",
+      "#f59e0b",
+      "#eab308",
+      "#84cc16",
+      "#22c55e",
+      "#10b981",
+      "#14b8a6",
+      "#06b6d4",
+      "#0ea5e9",
+      "#3b82f6",
+      "#6366f1"
+    ]
+  },
+  "probability_modes": [
+    {
+      "id": "basic",
+      "label": "Basic",
+      "icon": "calculator"
+    },
+    {
+      "id": "binomial",
+      "label": "Binomial",
+      "icon": "target"
+    },
+    {
+      "id": "poisson",
+      "label": "Poisson",
+      "icon": "shuffle"
+    },
+    {
+      "id": "normal",
+      "label": "Normal/Z",
+      "icon": "trending-up"
+    },
+    {
+      "id": "correlation",
+      "label": "Correlation",
+      "icon": "bar-chart-2"
+    }
+  ],
+  "chart_types": [
+    {
+      "id": "bar",
+      "label": "Bar",
+      "icon": "bar-chart-2"
+    },
+    {
+      "id": "line",
+      "label": "Line",
+      "icon": "line-chart"
+    },
+    {
+      "id": "area",
+      "label": "Area",
+      "icon": "activity"
+    },
+    {
+      "id": "pie",
+      "label": "Pie",
+      "icon": "pie-chart"
+    },
+    {
+      "id": "scatter",
+      "label": "Scatter",
+      "icon": "scatter-chart"
+    },
+    {
+      "id": "histogram",
+      "label": "Histogram",
+      "icon": "trending-up"
+    }
+  ],
+  "aggregations": [
+    {
+      "id": "sum",
+      "label": "Sum"
+    },
+    {
+      "id": "avg",
+      "label": "Average"
+    },
+    {
+      "id": "count",
+      "label": "Count"
+    },
+    {
+      "id": "min",
+      "label": "Min"
+    },
+    {
+      "id": "max",
+      "label": "Max"
+    }
+  ]
+}

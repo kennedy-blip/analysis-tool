@@ -1,0 +1,123 @@
+name: static-site
+
+# Keeps the migrated Python/Jinja2 site green while the legacy React/Vite app is
+# still what Render publishes. Both stacks are built until the cutover is done.
+
+on:
+  push:
+    branches: [arena/0fbcf013-analysis-tool, main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: static-site-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-unit-test:
+    name: Static site build + Python tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: site/requirements.txt
+
+      - name: Install build dependencies
+        run: python -m pip install -r site/requirements.txt
+
+      - name: Build
+        run: python site/build.py
+
+      - name: Unit + build tests
+        run: python -m unittest discover -s site/tests -t site/tests
+
+      - name: Verify publishable output
+        run: |
+          test -f site/public/index.html
+          test -f site/public/404.html
+          test -f site/public/data/sample_sales_data.json
+          test -f site/public/data/sample_stats.json
+          test -f site/public/build-manifest.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: static-site
+          path: site/public
+          retention-days: 7
+
+  js-engine-parity:
+    name: JS engine parity vs legacy TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Parity tests (browser engine vs golden values)
+        run: node --test "site/tests/parity/*.test.mjs"
+
+      - name: Re-derive golden values from the legacy engine
+        if: hashFiles('src/utils/statistics.ts') != ''
+        run: |
+          node site/tests/golden/generate_golden.mjs --out /tmp/regenerated.json
+          python site/tests/golden/compare_golden.py site/tests/golden_stats.json /tmp/regenerated.json
+
+  browser-behaviour:
+    name: DOM harness (jsdom drives the built pages)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: site/requirements.txt
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install build dependencies
+        run: python -m pip install -r site/requirements.txt
+
+      - name: Build the site the harness will drive
+        run: python site/build.py --quiet
+
+      - name: Install harness dependencies
+        working-directory: site/tests/dom
+        run: npm ci
+
+      - name: Run harness
+        working-directory: site/tests/dom
+        run: node harness.mjs
+
+  legacy-app:
+    name: Legacy React/Vite app still builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Verify legacy output
+        run: test -f dist/index.html

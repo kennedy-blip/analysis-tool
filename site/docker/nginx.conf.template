@@ -1,0 +1,60 @@
+# DataLens static site — nginx server config.
+#
+# Rendered at container start from docker/nginx.conf.template by the base image's
+# 20-envsubst-on-templates.sh. ${NGINX_PORT} is derived from Render's $PORT by
+# docker/render-port.envsh. Edit the template, never the rendered copy.
+#
+# The cache policy below mirrors the `headers:` block of render.yaml exactly, so
+# the static-site deployment and this Docker fallback behave identically.
+# site/tests/test_docker_fallback.py asserts that parity and will fail if the two
+# files drift apart.
+
+server {
+    # No IPv6 listener: containers without an IPv6 address would fail to start,
+    # and the base image's 10-listen-on-ipv6-by-default.sh runs BEFORE this file
+    # is rendered, so it cannot patch it.
+    listen ${NGINX_PORT};
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Assets are content-hashed by the build (?v=<sha256>), so a URL never changes
+    # meaning. Mirrors render.yaml `path: /assets/*`.
+    location /assets/ {
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        try_files $uri =404;
+    }
+
+    # Sample dataset + statistics are regenerated on every build.
+    # Mirrors render.yaml `path: /data/*`.
+    location /data/ {
+        add_header Cache-Control "public, max-age=3600" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        try_files $uri =404;
+    }
+
+    # HTML must always be revalidated, otherwise a deploy is invisible to
+    # returning visitors. Mirrors render.yaml `path: /*.html`.
+    # Regex locations are matched before the `/` prefix, so both direct requests
+    # to /index.html and the try_files fallback below land here.
+    location ~* \.html$ {
+        add_header Cache-Control "no-cache" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        try_files $uri =404;
+    }
+
+    # Serve the generated 404 page for unknown paths. Not marked `internal` so
+    # that /404.html also answers a direct request, as it does when the site is
+    # served by any other static host.
+    error_page 404 /404.html;
+
+    # Mirrors render.yaml `path: /`.
+    location / {
+        add_header X-Content-Type-Options "nosniff" always;
+        # Hash routing (#statistics) never reaches the server, so the shell is all
+        # a deep link needs.
+        try_files $uri $uri/ /index.html;
+    }
+}

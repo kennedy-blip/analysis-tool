@@ -1,0 +1,13 @@
+{
+  "name": "datalens-dom-tests",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Optional jsdom harness that drives the built DataLens pages like a browser.",
+  "type": "module",
+  "scripts": {
+    "test": "node harness.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0"
+  }
+}

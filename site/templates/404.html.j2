@@ -1,0 +1,24 @@
+{% from "macros/icons.html.j2" import icon %}
+<!doctype html>
+<html lang="{{ site.lang }}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ site.name }} - Page not found</title>
+    <meta name="robots" content="noindex" />
+    <link rel="icon" type="image/svg+xml" href="{{ asset_url('img/favicon.svg') }}" />
+    <link rel="stylesheet" href="{{ asset_url('css/styles.css') }}" />
+  </head>
+  <body class="not-found-page">
+    <main class="not-found">
+      <span class="not-found-badge">{{ icon('database', 'icon icon-xl') }}</span>
+      <p class="not-found-code">404</p>
+      <h1 class="not-found-title">That page isn't in this dataset</h1>
+      <p class="muted-sm">{{ site.description }}</p>
+      <a class="btn btn-gradient" href="index.html">
+        {{ icon('layout-dashboard', 'icon') }}
+        <span>Back to {{ site.name }}</span>
+      </a>
+    </main>
+  </body>
+</html>

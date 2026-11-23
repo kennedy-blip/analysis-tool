@@ -1,0 +1,18 @@
+# Build context is `site/` (see docker/Dockerfile). Everything here is excluded
+# from the image build: it is either regenerated inside the image or is local
+# tooling that must never ship.
+
+# Generated at build time inside the image — never send a stale local copy in.
+public
+
+# Local tooling and caches
+__pycache__/
+*.py[cod]
+.venv/
+.cache/
+tests/dom/node_modules/
+node_modules/
+
+# Editors / OS
+.DS_Store
+*.swp

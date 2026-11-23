@@ -1,0 +1,56 @@
+# Render Blueprint — STAGING ONLY.
+#
+# This file deliberately describes ONE new Static Site for the migrated
+# Python/Jinja2 build in `site/`. It does not reference, rename or modify the
+# service that currently serves production
+# (https://analysis-tool-82jq.onrender.com), which was configured in the Render
+# dashboard and still builds the legacy React/Vite app at the repository root.
+#
+# Cutover is a separate, evidence-gated step: see docs/migration/render.md.
+#
+# A containerised fallback lives in site/docker/ and is deliberately NOT declared
+# here. Render Static Sites cannot run Docker, and a Blueprint that declared a
+# second service would create it whether or not it was wanted. If this static
+# build turns out to have no Python, follow docs/migration/render.md § 3 and
+# create the fallback Web Service by hand (Root Directory `site`, Dockerfile Path
+# `docker/Dockerfile`) — and re-read § 6 first, because a Web Service gets a
+# different .onrender.com hostname, so it cannot silently take over production.
+
+services:
+  - type: static
+    name: analysis-tool-static-staging
+    # Everything below is relative to this directory.
+    rootDir: site
+    env: static
+    # Install the only build dependency, generate site/public, then run the
+    # Python test-suite so a broken build never publishes.
+    buildCommand: >-
+      python3 -m pip install --upgrade pip &&
+      pip install -r requirements.txt &&
+      python3 build.py &&
+      python3 -m unittest discover -s tests -t tests
+    publishDir: public
+    # Assets are content-hashed by the build (`?v=<sha256>`), so they can be
+    # cached forever; HTML must always be revalidated.
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /data/*
+        name: Cache-Control
+        value: public, max-age=3600
+      - path: /*.html
+        name: Cache-Control
+        value: no-cache
+      - path: /
+        name: X-Content-Type-Options
+        value: nosniff
+    envVars:
+      # Render's static-site build image selects the interpreter with this var.
+      # Confirm the value is accepted in the dashboard before relying on it
+      # (docs/migration/render.md, step 3).
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: NODE_VERSION
+        value: 22.11.0
+    pullRequestPreviewsEnabled: false

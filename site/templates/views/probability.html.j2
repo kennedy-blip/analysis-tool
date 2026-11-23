@@ -1,0 +1,238 @@
+{% from "macros/icons.html.j2" import icon %}
+
+<section class="view" id="view-probability" data-view="probability" hidden>
+  <div class="tab-strip" role="tablist" aria-label="Probability calculators">
+    {% for mode in site.probability_modes %}
+      <button
+        type="button"
+        class="tab{% if loop.first %} is-active{% endif %}"
+        role="tab"
+        id="prob-tab-{{ mode.id }}"
+        aria-controls="prob-panel-{{ mode.id }}"
+        aria-selected="{% if loop.first %}true{% else %}false{% endif %}"
+        data-prob-mode="{{ mode.id }}"
+      >
+        {{ icon(mode.icon, 'icon icon-sm') }}
+        <span>{{ mode.label }}</span>
+      </button>
+    {% endfor %}
+  </div>
+
+  {# Basic probability + combinations / permutations #}
+  <div class="panel-grid" id="prob-panel-basic" data-prob-panel="basic">
+    <div class="card">
+      <h3 class="card-heading">
+        {{ icon('percent', 'icon text-indigo') }}
+        <span>Simple Probability</span>
+      </h3>
+      <p class="muted-sm formula">P(A) = Favorable Outcomes / Total Outcomes</p>
+
+      <div class="stack-sm">
+        <div class="field">
+          <label class="field-label" for="prob-favorable">Favorable Outcomes</label>
+          <input class="input" type="number" id="prob-favorable" min="0" value="{{ defaults.basic.favorable }}" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="prob-total">Total Outcomes</label>
+          <input class="input" type="number" id="prob-total" min="1" value="{{ defaults.basic.total }}" />
+        </div>
+
+        <div class="result result-indigo">
+          <p class="result-label">Probability</p>
+          <p class="result-value" id="prob-basic-percent">{{ defaults.basic.percent }}</p>
+          <p class="result-sub" id="prob-basic-decimal">{{ defaults.basic.decimal }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 class="card-heading">
+        {{ icon('shuffle', 'icon text-purple') }}
+        <span>Combinations &amp; Permutations</span>
+      </h3>
+
+      <div class="stack-sm">
+        <div class="field-grid-2">
+          <div class="field">
+            <label class="field-label" for="prob-n">n (total)</label>
+            <input class="input" type="number" id="prob-n" min="0" value="{{ defaults.counting.n }}" />
+          </div>
+          <div class="field">
+            <label class="field-label" for="prob-r">r (choose)</label>
+            <input class="input" type="number" id="prob-r" min="0" value="{{ defaults.counting.r }}" />
+          </div>
+        </div>
+
+        <div class="field-grid-2">
+          <div class="result result-purple">
+            <p class="result-label">Combinations C(n,r)</p>
+            <p class="result-value-sm" id="prob-combinations">{{ defaults.counting.combinations }}</p>
+            <p class="result-note">Order doesn't matter</p>
+          </div>
+          <div class="result result-pink">
+            <p class="result-label">Permutations P(n,r)</p>
+            <p class="result-value-sm" id="prob-permutations">{{ defaults.counting.permutations }}</p>
+            <p class="result-note">Order matters</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Binomial distribution #}
+  <div class="card" id="prob-panel-binomial" data-prob-panel="binomial" hidden>
+    <h3 class="card-heading">
+      {{ icon('target', 'icon text-blue') }}
+      <span>Binomial Distribution</span>
+    </h3>
+    <p class="muted-sm formula">P(X = k) = C(n,k) &times; p^k &times; (1-p)^(n-k)</p>
+
+    <div class="field-grid-3 field-block">
+      <div class="field">
+        <label class="field-label" for="prob-bin-n">n (trials)</label>
+        <input class="input" type="number" id="prob-bin-n" min="1" value="{{ defaults.binomial.n }}" />
+      </div>
+      <div class="field">
+        <label class="field-label" for="prob-bin-k">k (successes)</label>
+        <input class="input" type="number" id="prob-bin-k" min="0" value="{{ defaults.binomial.k }}" />
+      </div>
+      <div class="field">
+        <label class="field-label" for="prob-bin-p">p (probability)</label>
+        <input class="input" type="number" id="prob-bin-p" min="0" max="1" step="0.01" value="{{ defaults.binomial.p }}" />
+      </div>
+    </div>
+
+    <div class="field-grid-3">
+      <div class="result result-blue">
+        <p class="result-label" id="prob-bin-p-label">P(X = {{ defaults.binomial.k }})</p>
+        <p class="result-value" id="prob-binomial-percent">{{ defaults.binomial.percent }}</p>
+      </div>
+      <div class="result result-blue">
+        <p class="result-label">Expected Value (&mu;)</p>
+        <p class="result-value" id="prob-binomial-mean">{{ defaults.binomial.expected }}</p>
+      </div>
+      <div class="result result-blue">
+        <p class="result-label">Std Dev (&sigma;)</p>
+        <p class="result-value" id="prob-binomial-stddev">{{ defaults.binomial.std_dev }}</p>
+      </div>
+    </div>
+  </div>
+
+  {# Poisson distribution #}
+  <div class="card" id="prob-panel-poisson" data-prob-panel="poisson" hidden>
+    <h3 class="card-heading">
+      {{ icon('shuffle', 'icon text-green') }}
+      <span>Poisson Distribution</span>
+    </h3>
+    <p class="muted-sm formula">P(X = k) = (&lambda;^k &times; e^(-&lambda;)) / k!</p>
+
+    <div class="field-grid-2 field-block">
+      <div class="field">
+        <label class="field-label" for="prob-lambda">&lambda; (lambda - avg rate)</label>
+        <input class="input" type="number" id="prob-lambda" min="0" step="0.1" value="{{ defaults.poisson.lambda }}" />
+      </div>
+      <div class="field">
+        <label class="field-label" for="prob-poisson-k">k (occurrences)</label>
+        <input class="input" type="number" id="prob-poisson-k" min="0" value="{{ defaults.poisson.k }}" />
+      </div>
+    </div>
+
+    <div class="field-grid-3">
+      <div class="result result-green">
+        <p class="result-label" id="prob-poisson-label">P(X = {{ defaults.poisson.k }})</p>
+        <p class="result-value" id="prob-poisson-percent">{{ defaults.poisson.percent }}</p>
+      </div>
+      <div class="result result-green">
+        <p class="result-label">Expected Value (&mu;)</p>
+        <p class="result-value" id="prob-poisson-mean">{{ defaults.poisson.expected }}</p>
+      </div>
+      <div class="result result-green">
+        <p class="result-label">Std Dev (&sigma;)</p>
+        <p class="result-value" id="prob-poisson-stddev">{{ defaults.poisson.std_dev }}</p>
+      </div>
+    </div>
+  </div>
+
+  {# Normal distribution / Z-score #}
+  <div class="card" id="prob-panel-normal" data-prob-panel="normal" hidden>
+    <h3 class="card-heading">
+      {{ icon('trending-up', 'icon text-amber') }}
+      <span>Normal Distribution &amp; Z-Score</span>
+    </h3>
+    <p class="muted-sm formula">Z = (X - &mu;) / &sigma;</p>
+
+    <div class="field-grid-3 field-block">
+      <div class="field">
+        <label class="field-label" for="prob-normal-x">X (value)</label>
+        <input class="input" type="number" id="prob-normal-x" step="0.1" value="{{ defaults.normal.x }}" />
+      </div>
+      <div class="field">
+        <label class="field-label" for="prob-normal-mean">&mu; (mean)</label>
+        <input class="input" type="number" id="prob-normal-mean" step="0.1" value="{{ defaults.normal.mean }}" />
+      </div>
+      <div class="field">
+        <label class="field-label" for="prob-normal-std">&sigma; (std dev)</label>
+        <input class="input" type="number" id="prob-normal-std" min="0.001" step="0.1" value="{{ defaults.normal.std }}" />
+      </div>
+    </div>
+
+    <div class="field-grid-2">
+      <div class="result result-amber">
+        <p class="result-label">Z-Score</p>
+        <p class="result-value" id="prob-zscore">{{ defaults.normal.z_score }}</p>
+      </div>
+      <div class="result result-amber">
+        <p class="result-label">PDF f(x)</p>
+        <p class="result-value" id="prob-pdf">{{ defaults.normal.pdf }}</p>
+      </div>
+    </div>
+  </div>
+
+  {# Correlation analysis (dataset driven) #}
+  <div class="card" id="prob-panel-correlation" data-prob-panel="correlation" hidden>
+    <h3 class="card-heading">
+      {{ icon('bar-chart-2', 'icon text-rose') }}
+      <span>Correlation Analysis</span>
+    </h3>
+    <p class="muted-sm formula">
+      Analyze the relationship between two numeric columns from your dataset
+    </p>
+
+    <div class="result result-muted" id="correlation-empty">
+      Please upload a dataset with at least 2 numeric columns to use correlation analysis.
+    </div>
+
+    <div id="correlation-body" hidden>
+      <div class="field-grid-2 field-block">
+        <div class="field">
+          <label class="field-label" for="prob-corr-x">X Column</label>
+          <select class="input" id="prob-corr-x">
+            <option value="">Select column...</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label" for="prob-corr-y">Y Column</label>
+          <select class="input" id="prob-corr-y">
+            <option value="">Select column...</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-grid-3" id="correlation-results" hidden>
+        <div class="result result-rose">
+          <p class="result-label">Pearson Correlation (r)</p>
+          <p class="result-value" id="prob-correlation"></p>
+          <p class="result-note" id="prob-correlation-strength"></p>
+        </div>
+        <div class="result result-rose">
+          <p class="result-label">Covariance</p>
+          <p class="result-value" id="prob-covariance"></p>
+        </div>
+        <div class="result result-rose">
+          <p class="result-label">R&sup2; (Coefficient of Determination)</p>
+          <p class="result-value" id="prob-r2"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

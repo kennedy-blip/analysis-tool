@@ -1,0 +1,44 @@
+{% from "macros/icons.html.j2" import icon %}
+
+<section class="view" id="view-statistics" data-view="statistics" hidden>
+  <div class="empty-state" id="statistics-empty">No data loaded. Please upload a file first.</div>
+
+  <div class="stack" id="statistics-content" hidden>
+    <div class="summary-grid">
+      <div class="summary-card summary-indigo">
+        <p class="summary-label">Total Rows</p>
+        <p class="summary-value" id="summary-rows"></p>
+      </div>
+      <div class="summary-card summary-purple">
+        <p class="summary-label">Total Columns</p>
+        <p class="summary-value" id="summary-columns"></p>
+      </div>
+      <div class="summary-card summary-blue">
+        <p class="summary-label">Numeric Cols</p>
+        <p class="summary-value" id="summary-numeric"></p>
+      </div>
+      <div class="summary-card summary-green">
+        <p class="summary-label">Categorical Cols</p>
+        <p class="summary-value" id="summary-categorical"></p>
+      </div>
+      <div class="summary-card summary-amber">
+        <p class="summary-label">Missing Values</p>
+        <p class="summary-value" id="summary-missing"></p>
+      </div>
+      <div class="summary-card summary-rose">
+        <p class="summary-label">Missing %</p>
+        <p class="summary-value" id="summary-missing-percent"></p>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="h3">Column Statistics</h2>
+      <p class="muted-sm section-note">Click on a column to expand and see detailed statistics</p>
+      <div class="stack-sm" id="column-stats"></div>
+    </div>
+  </div>
+
+  {# Column statistics for the bundled sample dataset, computed at build time by
+     site/stats.py and embedded so the sample loads without recomputation. #}
+  <script type="application/json" id="sample-stats">{{ sample | json | safe }}</script>
+</section>
