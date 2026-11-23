@@ -30,6 +30,31 @@ declares, so the dashboard-created production service is not touched — but con
 that immediately after creation: production should still be listed, still show its
 last successful deploy, and still serve the old build.
 
+⚠️ **If Render offers to "adopt", "sync" or "link" existing services into the new
+Blueprint, decline.** Adoption would put the production service under Blueprint
+management, and a later Blueprint apply could then rewrite settings that
+`render.yaml` does not describe (or report the service as removed, since the file
+declares only the staging site). Production must stay a plain dashboard-managed
+service until cutover, so that changing it remains one deliberate manual act with
+the rollback values in hand.
+
+### Merging the migration branch does not change production
+
+Worth stating plainly, because it is the part that feels risky and isn't: the
+production service builds from the repository root with the legacy Vite pipeline,
+and this branch leaves that pipeline byte-identical. `site/` is not referenced by
+`index.html`, `vite.config.ts` or `package.json`, so a root-directory build
+ignores it entirely, and the presence of `render.yaml` changes nothing for a
+service that was created in the dashboard rather than from a Blueprint.
+
+So merging to `main` redeploys the same legacy app it deploys today. Cutover is
+still a separate manual act (§ 6) — merging is not cutover, and the two should not
+be conflated.
+
+This is not just reasoning: the `legacy-app` CI job runs `npm ci && npm run build`
+on a checkout that already contains `site/`, `render.yaml` and `docs/`, asserts
+`dist/index.html` exists, and passes on every commit of this branch.
+
 ## 2. Production's real settings
 
 Confirmed by the repository owner on 2026-11-23:
