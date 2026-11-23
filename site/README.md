@@ -32,6 +32,7 @@ site/
 │   ├── golden/              # regenerate + compare golden values
 │   ├── parity/              # node --test suites for the browser engine
 │   ├── dom/                 # optional jsdom harness that drives the built pages
+│   ├── test_docker_fallback.py  # container fallback contract + $PORT plumbing
 │   └── test_*.py            # python unittest suites
 └── public/                  # build output (gitignored)
 ```
@@ -69,7 +70,7 @@ Deep links work with a hash: `index.html#statistics`.
 Individually:
 
 ```bash
-cd site && python3 -m unittest discover -s tests -t tests   # 107 tests
+cd site && python3 -m unittest discover -s tests -t tests   # 141 tests
 node --test "site/tests/parity/*.test.mjs"                  # 74 checks
 cd site/tests/dom && npm install && npm test                # 106 checks (needs a build first)
 ```
@@ -104,3 +105,17 @@ settings, the acceptance checklist and the rollback plan.
 | Publish directory | `public` |
 | Environment | `PYTHON_VERSION=3.11.9` |
 | Runtime dependencies | none — static files only |
+
+A containerised fallback (`site/docker/`: `python:3.11-slim` builder that runs
+the tests, `nginxinc/nginx-unprivileged` runtime serving only the generated
+files on Render's `$PORT`) exists in case the static build has no Python. It is
+not declared in `render.yaml`, because Render Static Sites cannot run Docker and
+a Blueprint would create the service unconditionally:
+
+```bash
+docker build -f site/docker/Dockerfile -t datalens-static site
+docker run --rm -e PORT=8080 -p 8080:8080 datalens-static
+```
+
+See [`docs/migration/render.md`](../docs/migration/render.md) § 3 for when to use
+it and what it costs.

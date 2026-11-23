@@ -11,8 +11,8 @@ no production cutover based only on a successful local build.**
 | 3 | Choose a target the environment can build | ✅ done — Python 3.11 + Jinja2 |
 | 4 | Minimal independent build, verified before content migration | ✅ done |
 | 5 | Move data and content in small steps | ✅ done |
-| 6 | Preserve behaviour with tests | ✅ done — 107 Python + 74 Node + 106 DOM checks |
-| 7 | Prepare staging, confirm Render's real settings, verify its build | 🔶 staged — blueprint committed, dashboard settings still to be read |
+| 6 | Preserve behaviour with tests | ✅ done — 141 Python + 74 Node + 106 DOM checks |
+| 7 | Prepare staging, confirm Render's real settings, verify its build | 🔶 in progress — production settings confirmed, Blueprint + container fallback ready, staging deploy pending |
 | 8 | Cut over only with evidence | ⬜ not started — gated on step 7 |
 | 9 | Clean up old source and tooling, update docs | ⬜ not started — gated on step 8 |
 
@@ -114,6 +114,7 @@ no React, no `vite-plugin-singlefile`, and no secrets — the app has none.
 | `site/tests/test_build.py` | Generated pages, embedded data, asset refs, ids used by JS, reproducibility | ✅ |
 | `site/tests/test_html_structure.py` | Tag balance, unique ids, label targets, sprite refs, a11y attributes (+ self-test) | ✅ |
 | `site/tests/test_config.py` | Config vs constants read out of the legacy components | ✅ |
+| `site/tests/test_docker_fallback.py` | Container fallback: stage contract, `$PORT` plumbing (executed), cache parity with `render.yaml` | ✅ |
 | `site/tests/dom/harness.mjs` | jsdom boots the built page and drives the UI end to end | ✅ 106 checks |
 
 Run everything with `./site/run_tests.sh`. CI runs the same suites plus a build
@@ -143,13 +144,38 @@ human, because that host is unreachable from this sandbox.
 
 ## Step 7 — staging (current step)
 
-`render.yaml` defines `analysis-tool-static-staging` as a Static Site with
-`rootDir: site`, `publishDir: public`, a build command that installs Jinja2,
-builds and runs the Python tests, and cache headers for the hashed assets.
-Remaining work, all in the Render dashboard: read the production service's actual
-runtime, root directory, build command and publish directory; create the staging
-service from the blueprint; confirm it builds and behaves; then compare staging
-against production using the checklist in [render.md](render.md).
+**Confirmed by the repository owner on 2026-11-23:** production is a Render
+**Static Site** with root directory **`/`** and publish directory **`dist/`**.
+That is the shape this migration targets, so cutover is a drop-in change of three
+settings on the existing service — no service-type change and no new hostname.
+
+Done here:
+
+* `render.yaml` defines the staging service `analysis-tool-static-staging`
+  (`rootDir: site`, `publishDir: public`, build → test → publish, cache headers).
+  It declares exactly one service, so creating the Blueprint cannot disturb
+  production.
+* Two fallbacks are prepared in case Render's static build has no Python 3.11:
+  publishing a committed `site/public/`, or serving the generated output from a
+  container (`site/docker/` — `python:3.11-slim` builder that runs the tests,
+  `nginxinc/nginx-unprivileged` runtime that ships only the built files and reads
+  Render's `$PORT`). Both are documented with their trade-offs in
+  [render.md](render.md) § 3; the container route would be a Web Service and so
+  would change the production URL, which is why it is a contingency and not the
+  plan.
+* `site/tests/test_docker_fallback.py` (34 tests) guards the container contract,
+  including executing `render-port.envsh` under `sh` to prove `$PORT` really
+  becomes the listen port, and asserting the container's cache headers are
+  identical to `render.yaml`. No Docker daemon or Docker Hub egress exists in this
+  workspace, so no image has actually been built — the first `docker build` is
+  still an unverified step.
+
+Remaining work, all in the Render dashboard: read production's exact build
+command, Node version, deployed branch, domains, header rules and auto-deploy
+setting (the rollback values); create the staging service from the Blueprint;
+confirm its build log shows Python 3.11, Jinja2 installed and `Ran 141 tests OK`;
+then complete the acceptance checklist and the side-by-side parity comparison
+([render.md](render.md) § 4 and § 5).
 
 ## Step 8 — cutover (gated)
 

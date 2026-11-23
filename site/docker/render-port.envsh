@@ -1,0 +1,24 @@
+#!/bin/sh
+# Sourced by the nginx base image entrypoint, then 20-envsubst-on-templates.sh
+# substitutes ${NGINX_PORT} into docker/nginx.conf.template.
+#
+# Two details make this file look odd and both are load-bearing:
+#
+#   1. It is `.envsh`, not `.sh`. The entrypoint SOURCES *.envsh files but
+#      EXECUTES *.sh files, so a `.sh` version would export into a subshell that
+#      immediately exits and nginx would listen on the baked-in ENV default
+#      instead of Render's $PORT.
+#   2. It is installed as `15-render-port.envsh`. The base image runs
+#      /docker-entrypoint.d/*.envsh|*.sh in lexical order, and substitution
+#      happens in `20-envsubst-on-templates.sh`. Any prefix >= 20 would run too
+#      late. `15-` also avoids colliding with the stock `15-local-resolvers.envsh`
+#      ('l' sorts before 'r', so no name clash).
+#
+# Render injects $PORT (Web Services) and nothing else is required here; the
+# unprivileged nginx image already runs as a non-root user on 8080.
+
+NGINX_PORT="${PORT:-8080}"
+export NGINX_PORT
+
+# Log once per start so a deploy log shows which port was actually chosen.
+echo "15-render-port: PORT=${PORT:-<unset>} -> listening on ${NGINX_PORT}"

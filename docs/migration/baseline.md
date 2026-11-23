@@ -32,17 +32,30 @@ Source size at baseline: 2,062 lines across `src/` (13 files).
 
 ## 2. Production service
 
-| Item | Value |
-| --- | --- |
-| Live URL | https://analysis-tool-82jq.onrender.com |
-| Platform | Render |
-| Service type | Static Site (single-file Vite output served from `dist/`) |
-| Configuration source | Render dashboard — **not** in the repository |
+| Item | Value | Status |
+| --- | --- | --- |
+| Live URL | https://analysis-tool-82jq.onrender.com | recorded |
+| Platform | Render | recorded |
+| Service type | Static Site | ✅ confirmed by owner 2026-11-23 |
+| Root directory | `/` (repository root) | ✅ confirmed by owner 2026-11-23 |
+| Publish directory | `dist/` | ✅ confirmed by owner 2026-11-23 |
+| Build command | `npm install && npm run build` (inferred from `package.json`; **exact string not yet read**) | ⬜ to confirm |
+| Node version | not recorded | ⬜ to confirm |
+| Deployed branch / auto-deploy | not recorded | ⬜ to confirm |
+| Custom domain, header & redirect rules | none observed | ⬜ to confirm |
+| Configuration source | Render dashboard — **not** in the repository | recorded |
+
+Because production is a Static Site with root `/` and publish `dist/`, the
+migration is a drop-in: cutover changes three settings on the existing service and
+keeps the URL. See [render.md](render.md) § 2 and § 6.
 
 **Do not assume the dashboard matches the repository.** The repo contained no
-`render.yaml` at baseline, so the service's root directory, build command,
-publish directory, environment and Node version exist only in Render's settings
-and must be read from the dashboard before any cutover (see `render.md`).
+`render.yaml` at baseline, so every value above exists only in Render's settings.
+Service type, root directory and publish directory have been confirmed; the exact
+build command, Node version, deployed branch, auto-deploy behaviour, domains and
+any header/redirect rules have **not** been read yet, and they are the values a
+rollback has to restore — so read them from the dashboard before cutover
+(see `render.md` § 2).
 
 ### Verification limitation in this workspace
 

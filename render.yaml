@@ -7,6 +7,14 @@
 # dashboard and still builds the legacy React/Vite app at the repository root.
 #
 # Cutover is a separate, evidence-gated step: see docs/migration/render.md.
+#
+# A containerised fallback lives in site/docker/ and is deliberately NOT declared
+# here. Render Static Sites cannot run Docker, and a Blueprint that declared a
+# second service would create it whether or not it was wanted. If this static
+# build turns out to have no Python, follow docs/migration/render.md § 3 and
+# create the fallback Web Service by hand (Root Directory `site`, Dockerfile Path
+# `docker/Dockerfile`) — and re-read § 6 first, because a Web Service gets a
+# different .onrender.com hostname, so it cannot silently take over production.
 
 services:
   - type: static

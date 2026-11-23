@@ -15,62 +15,156 @@ type: static
 name: analysis-tool-static-staging
 rootDir: site
 env: static
-buildCommand: pip install -r requirements.txt && python3 build.py && python3 -m unittest discover -s tests -t tests
+buildCommand: python3 -m pip install --upgrade pip && pip install -r requirements.txt && python3 build.py && python3 -m unittest discover -s tests -t tests
 publishDir: public
 envVars: PYTHON_VERSION=3.11.9, NODE_VERSION=22.11.0
+pullRequestPreviewsEnabled: false
 ```
 
 The build command runs the test-suite before publishing, so a broken build cannot
 produce a deployable `public/` directory.
 
-## 2. Read production's real settings first
+Create it with **New → Blueprint → this repository → branch
+`arena/0fbcf013-analysis-tool`**. A Blueprint only manages the services it
+declares, so the dashboard-created production service is not touched — but confirm
+that immediately after creation: production should still be listed, still show its
+last successful deploy, and still serve the old build.
 
-Do not assume the dashboard matches the repository. Before touching anything,
-record these five values from the production service in Render →
-`analysis-tool` → Settings, and paste them into the table below:
+## 2. Production's real settings
 
-| Setting | Where to look | Value (fill in) |
+Confirmed by the repository owner on 2026-11-23:
+
+| Setting | Value | Source |
 | --- | --- | --- |
-| Service type | Settings → General | ☐ Static Site ☐ Web Service |
-| Runtime / environment | Settings → General (or Environment) | |
-| Root directory | Settings → Build & deploy | |
-| Build command | Settings → Build & deploy | |
-| Publish directory | Settings → Build & deploy | |
-| Node/Python version | Settings → Environment | |
-| Branch deployed | Settings → Build & deploy | |
-| Custom domain / TLS | Settings → Domains | |
+| Service type | **Static Site** | owner, dashboard |
+| Root directory | **`/`** (repository root) | owner, dashboard |
+| Publish directory | **`dist/`** | owner, dashboard |
 
-Two outcomes are possible and both are handled below:
+Good news: that is exactly the shape this migration targets, so the cutover is a
+**drop-in change of three settings** (root directory, build command, publish
+directory) on the existing service. No service type change, no re-pointed domain,
+no new hostname. § 6 has the values to restore if it goes wrong.
 
-* **Static Site with root `/` and publish `dist/`** — the migration is a drop-in:
-  only the root directory, build command and publish directory change.
-* **Web Service running `vite preview`/`serve`** — then the new build must be
-  served the same way, or the service type must change. Do that on staging first
-  and treat it as a separate decision.
+Still to read from the dashboard before cutover — these were *not* confirmed and
+must not be guessed, because they are the rollback values:
+
+| Setting | Where to look | Value |
+| --- | --- | --- |
+| Build command (exact string) | Settings → Build & deploy | ⬜ |
+| Node version / environment | Settings → Environment | ⬜ |
+| Branch deployed | Settings → Build & deploy | ⬜ |
+| Custom domain or TLS certificate | Settings → Domains | ⬜ |
+| Any header/redirect rules | Settings → Headers & redirects | ⬜ |
+| Auto-deploy enabled? | Settings → Build & deploy | ⬜ |
+
+Write them into this table, or into the pull request, before touching production.
+The last two matter most: if production auto-deploys on push to the deployed
+branch, merging changes the live site without a separate cutover decision.
 
 ## 3. Verify the staging build environment
 
-`env: static` with `PYTHON_VERSION` is the assumption this blueprint makes.
-Confirm it on the staging deploy before trusting it:
+`env: static` with `PYTHON_VERSION` is the assumption the blueprint makes, and it
+is the one thing this workspace could not test — there is no Render access here.
+Confirm it on the first staging deploy:
 
-1. Create the service from the blueprint (Render → New → Blueprint → this repo →
-   this branch), or create a Static Site manually with the values from § 1 of
-   `render.yaml`.
-2. Open the first deploy log and check:
-   * `python3 --version` reports 3.11.x (add `python3 --version` to the build
-     command temporarily if the log does not show it);
-   * `pip install -r requirements.txt` installs Jinja2 3.1.6;
-   * `python3 build.py` prints `Built DataLens static site -> /opt/render/project/site/public`;
-   * `Ran 107 tests ... OK`.
-3. If Python is unavailable or pinned to another version, fall back in this order:
-   * set `PYTHON_VERSION` explicitly to a value Render lists for static builds;
-   * or switch the staging service to a Docker static site using a
-     `python:3.11-slim` image that runs `build.py` and serves `public/`;
-   * or, as a last resort, commit `site/public/` and publish it directly — least
-     preferred, because generated files then live in Git.
-4. Confirm the deploy URL serves the app: `/` returns the shell, `/404.html`
-   renders for an unknown path, and `/assets/js/app.js?v=…` returns
-   `Content-Type: text/javascript` with the `Cache-Control` from the blueprint.
+1. Create the service from the blueprint (§ 1).
+2. Open the deploy log and check, in order:
+   * `pip install -r requirements.txt` installs Jinja2 3.1.6 on Python 3.11;
+   * `python3 build.py` prints
+     `Built DataLens static site -> /opt/render/project/site/public`;
+   * `Ran 141 tests ... OK`;
+   * the publish step reports `public` with ~21 files.
+3. If the Python version is wrong, add `python3 --version` to the build command
+   temporarily, or set `PYTHON_VERSION` to a value Render documents for static
+   builds.
+4. Check the deployed site: `/` serves the app, an unknown path serves
+   `404.html`, `/assets/js/app.js?v=…` returns
+   `Content-Type: text/javascript` with `Cache-Control: public, max-age=31536000,
+   immutable`, `/data/sample_sales_data.json` returns `application/json`, and
+   `index.html` returns `Cache-Control: no-cache`.
+
+### If Python is unavailable on the static build
+
+Two fallbacks, in this order of preference.
+
+**A. Publish the pre-built output.** Commit `site/public/` (remove it from
+`.gitignore`) and reduce the build command to a no-op such as `echo "using
+committed build"`, keeping `publishDir: public`.
+
+* Keeps the service type and therefore the production URL unchanged, and needs no
+  interpreter on Render at all.
+* Costs: generated files live in Git (~1 MB, including the vendored SheetJS), and
+  the published bundle is only as fresh as the last commit — so the Python tests
+  must run in CI (they already do) and the committed output must be regenerated
+  whenever templates, data or config change. `site/run_tests.sh` is the command
+  that does it.
+
+**B. Serve the site from a container.** `site/docker/` holds a complete fallback
+image: `Dockerfile`, `nginx.conf.template`, `render-port.envsh`.
+
+```bash
+# context is site/ — paths inside the Dockerfile are relative to it
+docker build -f site/docker/Dockerfile -t datalens-static site
+docker run --rm -e PORT=8080 -p 8080:8080 datalens-static
+curl -i localhost:8080/ | head -12
+curl -sI localhost:8080/assets/css/styles.css | grep -i cache-control
+curl -i localhost:8080/does-not-exist | head -8      # -> the generated 404 page
+```
+
+How it works:
+
+| Stage | Base image | What it does |
+| --- | --- | --- |
+| `builder` | `python:3.11-slim` | installs `requirements.txt`, runs `build.py --output /build/public`, then runs the full Python suite so a broken site cannot be baked in |
+| `runtime` | `nginxinc/nginx-unprivileged:1.27-alpine` | copies **only** `/build/public` to `/usr/share/nginx/html`; no Python, no source, no tests ship |
+
+The runtime stage honours Render's `$PORT` through
+`docker/render-port.envsh`, installed as
+`/docker-entrypoint.d/15-render-port.envsh`. Two details there are load-bearing
+and easy to break:
+
+* it must be `.envsh`, not `.sh` — the nginx entrypoint **sources** `*.envsh` but
+  **executes** `*.sh` in a subshell, where an `export` cannot reach the
+  substitution step, so nginx would silently listen on the baked-in default;
+* the `15-` prefix must sort before the base image's
+  `20-envsubst-on-templates.sh`, which renders `${NGINX_PORT}` into the config.
+
+Cache headers in `nginx.conf.template` mirror `render.yaml` exactly
+(`/assets/` immutable for a year, `/data/` one hour, `*.html` no-cache,
+`X-Content-Type-Options: nosniff` on everything), so the two deployment routes
+cannot drift apart.
+
+On Render this is a **Web Service** with runtime **Docker**, Root Directory
+`site`, Dockerfile Path `docker/Dockerfile`, and the default health check path
+`/` (which `index.html` answers with 200).
+
+> ⚠️ **Read this before using fallback B for production.** Render Static Sites
+> cannot run Docker, so this route means a *Web Service* — and a Web Service gets
+> a **different `.onrender.com` hostname**. It therefore cannot take over
+> `analysis-tool-82jq.onrender.com` in place. Using it for production requires a
+> custom domain or accepting a URL change, which is a bigger decision than the
+> migration itself. Use B for staging verification, and prefer A if production
+> must keep its URL.
+
+Why the image files are not at `site/Dockerfile`: Render auto-detects a Dockerfile
+in a service's root directory, and the staging static site's root *is* `site`. A
+`site/Dockerfile` could make the static build do something nobody asked for, so
+the definition lives one directory down and
+`site/tests/test_docker_fallback.py` fails the build if `site/Dockerfile` ever
+appears.
+
+What is and is not verified about fallback B:
+
+* ✅ verified without a daemon (34 tests): stage contract, pinned base images,
+  build-then-test ordering, runtime ships only generated output, entrypoint
+  filename ordering and executable bit, template renders to a structurally valid
+  config with `$uri` intact, no IPv6 listener, cache policy identical to
+  `render.yaml`, `$PORT` plumbing **executed** through `sh` (1234 → 1234, unset →
+  8080, empty → 8080).
+* ❌ not verified here: no Docker daemon and no Docker Hub egress in this
+  workspace, so neither base image was pulled and no container was started. The
+  first `docker build` is the real test. Run the smoke commands above before
+  trusting it.
 
 ## 4. Staging acceptance checklist
 
@@ -88,6 +182,7 @@ Run these against the staging URL. Every item is already automated locally
 - [ ] Visualization: bar, line, area, pie (with legend), scatter, histogram all draw; selects hide/show per chart type.
 - [ ] Mobile width (≤ 1023px): drawer opens, overlay closes it, Escape closes it.
 - [ ] Hard reload with no dataset: every view shows its empty state (no persistence, as before).
+- [ ] Response headers match § 3 step 4.
 - [ ] No console errors; no request to any CDN.
 
 ## 5. Parity comparison against production
@@ -111,38 +206,51 @@ branch.
 
 **Preconditions (all required):**
 
-- [ ] § 2 table filled in from the dashboard.
-- [ ] Staging deployed from this branch, build log shows tests passing.
+- [ ] § 2 "still to read" table filled in from the dashboard.
+- [ ] Staging deployed from this branch; log shows Jinja2 installed, the build
+      summary and `Ran 141 tests ... OK`.
 - [ ] § 4 checklist complete on staging.
 - [ ] § 5 comparison complete, differences explained.
 - [ ] CI green on the branch, including the `legacy-app` job.
+- [ ] Auto-deploy behaviour understood (does merging alone change production?).
 
-**Cutover (choose one):**
+**Cutover — the drop-in path** (production is a Static Site, root `/`, publish
+`dist/`):
 
-* *Preferred, smallest blast radius:* keep the existing production service and
-  change only Root directory → `site`, Build command → the one in `render.yaml`,
-  Publish directory → `public`, plus `PYTHON_VERSION`. Note the previous values
-  first. Trigger a manual deploy and watch the log.
-* *Alternative:* point the production domain at the staging service once staging
-  has been verified, then retire the old service.
+1. In production → Settings → Build & deploy, write down the current values
+   (screenshot them), then set:
+   * Root directory: `/` → **`site`**
+   * Build command: → **`python3 -m pip install --upgrade pip && pip install -r requirements.txt && python3 build.py && python3 -m unittest discover -s tests -t tests`**
+   * Publish directory: `dist/` → **`public`**
+2. In Settings → Environment, add **`PYTHON_VERSION=3.11.9`** (the `NODE_VERSION`
+   entry can stay or be removed; the new build needs no Node).
+3. Copy the four header rules from `render.yaml` into Settings → Headers &
+   redirects if they are not inherited from the Blueprint.
+4. Trigger a manual deploy and watch the log to completion.
+
+**Alternative:** point the production domain at the verified staging service, then
+retire the old one. More moving parts; prefer the drop-in path.
 
 **Verify immediately after:**
 
-- [ ] `https://analysis-tool-82jq.onrender.com` returns the new build (check the
-      `<meta name="generator">` tag reads `DataLens static site builder …`).
+- [ ] `https://analysis-tool-82jq.onrender.com` returns the new build — check
+      `<meta name="generator">` reads `DataLens static site builder …` and that
+      `index.html` is ~58 KB, not ~1 MB.
 - [ ] Upload a CSV in a real browser and exercise all five views.
-- [ ] Assets load with 200s and the expected `Cache-Control`.
+- [ ] Assets return 200 with the expected `Cache-Control`; an unknown path serves
+      the generated 404 page.
 
 **Rollback (do this on any failure, before investigating):**
 
-* If the old settings were changed in place: restore Root directory `/`, Build
-  command `npm install && npm run build`, Publish directory `dist`, remove
-  `PYTHON_VERSION`, and redeploy. The legacy app is untouched on `main`, so this
-  always rebuilds the known-good site.
-* If a previous deploy exists: Render → Deploys → pick the last successful
-  production deploy → Rollback.
-* Then keep staging up, reproduce the failure there, and only retry the cutover
-  with a fix that has passed § 4 and § 5 again.
+1. Restore the three settings to the values written down in step 1: Root
+   directory `/`, the legacy build command, Publish directory `dist/`.
+2. Remove `PYTHON_VERSION` (a static build may otherwise select Python and skip
+   the Node install the legacy build needs).
+3. Redeploy. The legacy app is byte-identical to `main` on this branch, so this
+   rebuilds the known-good site; alternatively Render → Deploys → last successful
+   production deploy → Rollback.
+4. Keep staging up, reproduce the failure there, and only retry the cutover with a
+   fix that has passed § 4 and § 5 again.
 
 ## 7. After a successful cutover
 
