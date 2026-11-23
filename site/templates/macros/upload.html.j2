@@ -1,0 +1,38 @@
+{% from "macros/icons.html.j2" import icon %}
+
+{# Drag & drop upload zone, ported from src/components/FileUpload.tsx.
+   `zone_id` keeps the two instances on the Overview view independent. #}
+{% macro upload_zone(upload, zone_id) %}
+<div class="upload" data-upload="{{ zone_id }}">
+  <div class="upload-dropzone" id="dropzone-{{ zone_id }}">
+    <input
+      type="file"
+      class="upload-input"
+      accept="{{ upload.accept }}"
+      data-upload-input="{{ zone_id }}"
+      aria-label="Choose an Excel or CSV file"
+    />
+    <div class="upload-body">
+      <span class="upload-badge" data-upload-badge="{{ zone_id }}">
+        {{ icon('upload', 'icon upload-icon') }}
+        {{ icon('file-spreadsheet', 'icon upload-icon') }}
+      </span>
+      <span>
+        <p class="upload-title" data-upload-title="{{ zone_id }}">{{ upload.title }}</p>
+        <p class="upload-hint">{{ upload.hint }}</p>
+      </span>
+      <span class="upload-formats">
+        {{ icon('file-spreadsheet', 'icon icon-sm') }}
+        <span>{{ upload.formats }}</span>
+      </span>
+    </div>
+  </div>
+  <div class="alert alert-error" data-upload-error="{{ zone_id }}" hidden>
+    {{ icon('alert-circle', 'icon alert-icon') }}
+    <p class="alert-text"></p>
+    <button type="button" class="alert-close" aria-label="Dismiss error">
+      {{ icon('x', 'icon icon-sm') }}
+    </button>
+  </div>
+</div>
+{% endmacro %}

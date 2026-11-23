@@ -88,6 +88,36 @@ With aggregation options: Sum, Average, Count, Min, Max
 
 ---
 
+## 🚧 Migration status
+
+Production ([analysis-tool-82jq.onrender.com](https://analysis-tool-82jq.onrender.com))
+still serves the React/Vite build described below — nothing in the current
+deployment has changed.
+
+A replacement **static site built with Python 3.11 + Jinja2** is being developed
+in parallel in [`site/`](site/), on a feature branch, with the same behaviour and
+the same calculations:
+
+```bash
+cd site
+pip install -r requirements.txt
+python3 build.py          # writes site/public/
+./run_tests.sh            # 88 python + 74 node + 106 DOM checks
+```
+
+| Document | What it records |
+| --- | --- |
+| [`docs/migration/baseline.md`](docs/migration/baseline.md) | what production runs today, and what could not be verified from the migration workspace |
+| [`docs/migration/plan.md`](docs/migration/plan.md) | the nine migration steps and their current status |
+| [`docs/migration/parity.md`](docs/migration/parity.md) | behaviour-by-behaviour mapping, plus the only five intentional changes |
+| [`docs/migration/render.md`](docs/migration/render.md) | staging service, acceptance checklist, cutover preconditions, rollback |
+| [`site/README.md`](site/README.md) | how to build, preview, test and deploy the new site |
+
+Cutover is gated on a verified staging deployment; it does not happen as a side
+effect of merging the migration branch.
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -164,6 +194,8 @@ If you don't have a file ready, click "Generate Sample Dataset" on the Overview 
 
 ## 🛠️ Tech Stack
 
+What production runs today (the legacy app at the repository root):
+
 | Technology | Purpose |
 |------------|---------|
 | **React 19** | UI Framework |
@@ -173,6 +205,12 @@ If you don't have a file ready, click "Generate Sample Dataset" on the Overview 
 | **Recharts** | Data Visualization |
 | **SheetJS (xlsx)** | Excel/CSV Parsing |
 | **Lucide React** | Icons |
+
+The migrated static site in [`site/`](site/) replaces all of the above with
+**Python 3.11 + Jinja2** at build time and framework-free **ES modules**,
+hand-written CSS, inline SVG charts, an extracted lucide sprite and the same
+vendored SheetJS build at runtime. See
+[`docs/migration/parity.md`](docs/migration/parity.md).
 
 ---
 

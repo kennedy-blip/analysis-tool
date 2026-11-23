@@ -1,0 +1,97 @@
+{% from "macros/icons.html.j2" import icon, sprite %}
+<!doctype html>
+<html lang="{{ site.lang }}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ site.name }} - {{ site.tagline }}</title>
+    <meta name="description" content="{{ site.description }}" />
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="generator" content="{{ build.generator }}" />
+    <link rel="icon" type="image/svg+xml" href="{{ asset_url('img/favicon.svg') }}" />
+    <link rel="stylesheet" href="{{ asset_url('css/styles.css') }}" />
+    <script>
+      // Build-time configuration injected by site/build.py from site/site.json.
+      window.DATALENS_CONFIG = {{ client_config | json | safe }};
+    </script>
+  </head>
+  <body>
+    {{ sprite() }}
+
+    <div class="app">
+      <button
+        type="button"
+        class="menu-toggle"
+        id="sidebar-toggle"
+        aria-label="Toggle navigation"
+        aria-expanded="false"
+        aria-controls="sidebar"
+      >
+        {{ icon('menu', 'icon icon-lg') }}
+        {{ icon('x', 'icon icon-lg') }}
+      </button>
+
+      <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
+
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+          <div class="flex items-center gap-3">
+            <span class="logo-badge">{{ icon('database', 'icon icon-lg text-white') }}</span>
+            <span>
+              <span class="logo-title">{{ site.name }}</span>
+              <span class="logo-subtitle">{{ site.tagline }}</span>
+            </span>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav" aria-label="Sections">
+          <ul class="nav-list">
+            {% for view in views %}
+              <li>
+                <button
+                  type="button"
+                  class="nav-item{% if view.id == default_view %} is-active{% endif %}"
+                  data-tab="{{ view.id }}"
+                  aria-current="{% if view.id == default_view %}page{% else %}false{% endif %}"
+                >
+                  {{ icon(view.icon, 'icon nav-icon') }}
+                  <span>{{ view.label }}</span>
+                </button>
+              </li>
+            {% endfor %}
+          </ul>
+        </nav>
+
+        <div class="sidebar-status">
+          <div class="status-card status-empty" id="dataset-status-empty">
+            <p class="status-label">NO DATASET</p>
+            <p class="status-text">Upload a file to start</p>
+          </div>
+          <div class="status-card status-loaded" id="dataset-status-loaded" hidden>
+            <p class="status-label">DATASET LOADED</p>
+            <p class="status-name" id="dataset-status-name"></p>
+            <p class="status-meta" id="dataset-status-meta"></p>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="main-header">
+          <div class="main-header-text">
+            {% for view in views %}
+              <h2 class="main-title" data-title="{{ view.id }}"{% if view.id != default_view %} hidden{% endif %}>{{ view.title }}</h2>
+              <p class="main-subtitle" data-subtitle="{{ view.id }}"{% if view.id != default_view %} hidden{% endif %}>{{ view.subtitle }}</p>
+            {% endfor %}
+          </div>
+        </header>
+
+        <div class="page">
+          {% block content %}{% endblock %}
+        </div>
+      </main>
+    </div>
+
+    <script src="{{ asset_url('vendor/xlsx.full.min.js') }}" defer></script>
+    <script type="module" src="{{ asset_url('js/app.js') }}"></script>
+  </body>
+</html>

@@ -1,0 +1,44 @@
+{% from "macros/icons.html.j2" import icon %}
+
+<section class="view" id="view-data" data-view="data" hidden>
+  <div class="empty-state" id="data-empty">No data loaded. Please upload a file first.</div>
+
+  <div class="table-card" id="data-table-card" hidden>
+    <div class="table-toolbar">
+      <div class="search">
+        {{ icon('search', 'icon search-icon') }}
+        <input
+          type="text"
+          class="search-input"
+          id="table-search"
+          placeholder="Search data..."
+          aria-label="Search data"
+        />
+      </div>
+      <p class="muted-sm" id="table-summary"></p>
+    </div>
+
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr id="table-head-row"></tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+
+    <div class="table-footer">
+      <button type="button" class="btn btn-outline" id="table-prev">
+        {{ icon('chevron-left', 'icon icon-sm') }}
+        <span>Previous</span>
+      </button>
+
+      <div class="pager" id="table-pager"></div>
+
+      <button type="button" class="btn btn-outline" id="table-next">
+        <span>Next</span>
+        {{ icon('chevron-right', 'icon icon-sm') }}
+      </button>
+    </div>
+  </div>
+</section>

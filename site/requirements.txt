@@ -1,0 +1,4 @@
+# Static site build dependencies for DataLens.
+# Only Jinja2 is required; the build script otherwise uses the Python 3.11 stdlib.
+Jinja2==3.1.6
+MarkupSafe==3.0.4

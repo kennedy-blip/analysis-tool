@@ -1,0 +1,95 @@
+{% from "macros/icons.html.j2" import icon %}
+{% from "macros/upload.html.j2" import upload_zone %}
+
+<section class="view" id="view-overview" data-view="overview">
+  {# Loading state (DataOverview.tsx: isLoading) #}
+  <div class="loading" id="overview-loading" hidden>
+    <div class="loading-inner">
+      <span class="spinner" aria-hidden="true"></span>
+      <p class="loading-text">Processing your file...</p>
+    </div>
+  </div>
+
+  {# Empty state: welcome + upload + sample data + feature cards #}
+  <div class="stack" id="overview-empty">
+    <div class="center-block">
+      <h2 class="h2">Welcome to {{ site.name }}</h2>
+      <p class="lede">
+        Upload your Excel or CSV file to start analyzing your data. We'll help you compute
+        statistics, calculate probabilities, and visualize your data.
+      </p>
+    </div>
+
+    {{ upload_zone(site.upload, 'welcome') }}
+
+    <div class="center-block sample-cta">
+      <p class="muted-sm sample-cta-text">Don't have a file? Try with sample data:</p>
+      <button type="button" class="btn btn-gradient" id="generate-sample">
+        {{ icon('sparkles', 'icon') }}
+        <span>Generate Sample Dataset</span>
+      </button>
+      <p class="muted-xs sample-note">
+        {{ sample.rowCount }} rows &times; {{ sample.columnCount }} columns, pre-built at deploy time
+        from <code>data/{{ sample_data_file }}</code>.
+      </p>
+    </div>
+
+    <div class="feature-grid">
+      {% for feature in site.features %}
+        <div class="card feature-card">
+          <span class="feature-badge feature-{{ feature.tone }}">{{ icon(feature.icon, 'icon icon-lg') }}</span>
+          <h3 class="feature-title">{{ feature.title }}</h3>
+          <p class="muted-sm">{{ feature.text }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# Loaded state: dataset summary card, columns list, re-upload #}
+  <div class="stack" id="overview-loaded" hidden>
+    <div class="dataset-card">
+      <div class="dataset-head">
+        <div class="dataset-identity">
+          <span class="dataset-icon">{{ icon('file-spreadsheet', 'icon icon-xl') }}</span>
+          <span>
+            <h2 class="dataset-name" id="dataset-name"></h2>
+            <p class="dataset-note">Uploaded successfully</p>
+          </span>
+        </div>
+        <button type="button" class="btn btn-ghost-light" id="clear-data">
+          {{ icon('trash-2', 'icon icon-sm') }}
+          <span>Clear &amp; Upload New</span>
+        </button>
+      </div>
+
+      <div class="dataset-metrics">
+        <div class="metric">
+          <p class="metric-label">{{ icon('rows-3', 'icon icon-sm') }} Rows</p>
+          <p class="metric-value" id="metric-rows"></p>
+        </div>
+        <div class="metric">
+          <p class="metric-label">{{ icon('columns-3', 'icon icon-sm') }} Columns</p>
+          <p class="metric-value" id="metric-columns"></p>
+        </div>
+        <div class="metric">
+          <p class="metric-label">{{ icon('calendar', 'icon icon-sm') }} Uploaded</p>
+          <p class="metric-value metric-value-sm" id="metric-uploaded"></p>
+        </div>
+        <div class="metric">
+          <p class="metric-label">{{ icon('hard-drive', 'icon icon-sm') }} Size</p>
+          <p class="metric-value metric-value-sm" id="metric-size"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title">Dataset Columns</h3>
+      <div class="chip-list" id="column-chips"></div>
+    </div>
+
+    <div class="card card-muted">
+      <h3 class="card-title">Upload Different File</h3>
+      {{ upload_zone(site.upload, 'replace') }}
+    </div>
+  </div>
+</section>

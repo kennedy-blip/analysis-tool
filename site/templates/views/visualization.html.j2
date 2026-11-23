@@ -1,0 +1,59 @@
+{% from "macros/icons.html.j2" import icon %}
+
+<section class="view" id="view-visualization" data-view="visualization" hidden>
+  <div class="empty-state" id="visualization-empty">No data loaded. Please upload a file first.</div>
+
+  <div class="stack" id="visualization-content" hidden>
+    <div class="tab-strip" role="tablist" aria-label="Chart types">
+      {% for chart in site.chart_types %}
+        <button
+          type="button"
+          class="tab{% if loop.first %} is-active{% endif %}"
+          role="tab"
+          id="chart-tab-{{ chart.id }}"
+          aria-selected="{% if loop.first %}true{% else %}false{% endif %}"
+          data-chart-type="{{ chart.id }}"
+        >
+          {{ icon(chart.icon, 'icon icon-sm') }}
+          <span>{{ chart.label }}</span>
+        </button>
+      {% endfor %}
+    </div>
+
+    <div class="card card-compact">
+      <h3 class="card-subtitle">Chart Configuration</h3>
+      <div class="field-grid-3">
+        <div class="field">
+          <label class="field-label-xs" for="chart-x" id="chart-x-label">X-Axis / Category</label>
+          <select class="input input-sm" id="chart-x">
+            <option value="">Select column...</option>
+          </select>
+        </div>
+
+        <div class="field" id="chart-y-field">
+          <label class="field-label-xs" for="chart-y" id="chart-y-label">Value Column (optional)</label>
+          <select class="input input-sm" id="chart-y">
+            <option value="">Select column...</option>
+          </select>
+        </div>
+
+        <div class="field" id="chart-agg-field">
+          <label class="field-label-xs" for="chart-agg">Aggregation</label>
+          <select class="input input-sm" id="chart-agg">
+            {% for aggregation in site.aggregations %}
+              <option value="{{ aggregation.id }}"{% if loop.first %} selected{% endif %}>{{ aggregation.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="chart-placeholder" id="chart-placeholder">Select columns to generate chart</div>
+      <div class="chart-frame" id="chart-frame" hidden>
+        <div class="chart-tooltip" id="chart-tooltip" hidden></div>
+        <div class="chart-legend" id="chart-legend" hidden></div>
+      </div>
+    </div>
+  </div>
+</section>
